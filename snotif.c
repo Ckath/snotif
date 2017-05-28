@@ -1,6 +1,4 @@
 /* see LICENCE file for copyright and license information */
-// TODO: wireless checking
-// TODO: manpage, readme
 
 #include <err.h>
 #include <libnotify/notify.h>
