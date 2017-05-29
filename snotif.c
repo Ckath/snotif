@@ -1,4 +1,4 @@
-/* see LICENCE file for copyright and license information */
+/* see LICENSE file for copyright and license information */
 
 #include <err.h>
 #include <libnotify/notify.h>
@@ -9,13 +9,22 @@
 #include <unistd.h>
 #include "config.h"
 
+#if defined BATT_PERC_FILE &&\
+    defined BATT_CRITICAL_PERC
+static void check_batt(char *state_old, char *cflag);
+#else
 static void check_batt(char *state_old);
-#ifdef BATT_PERC_FILE
-static void get_perc(int *perc, char *state);
 #endif
+#ifdef BATT_PERC_FILE
 #if defined BATT_TIME_REM_EMPTY_FILE &&\
     defined BATT_TIME_REM_CHARGED_FILE
 static void get_time(int *time, char *state);
+#endif
+static void get_perc(int *perc, char *state);
+#endif
+#if defined BATT_PERC_FILE &&\
+    defined BATT_CRITICAL_PERC
+static void check_crit(int *perc, char *state, char *cflag);
 #endif
 #ifdef WLAN_LINK_FILE
 static void check_wlan(int *link_old);
@@ -26,7 +35,12 @@ static void sighandler(const int signo);
 static unsigned short int done;
 
 static void
+#if defined BATT_PERC_FILE &&\
+    defined BATT_CRITICAL_PERC
+check_batt(char *state_old, char *cflag)
+#else
 check_batt(char *state_old)
+#endif
 {
 	FILE *fp;
     char state[12];
@@ -37,21 +51,27 @@ check_batt(char *state_old)
 	fscanf(fp, "%12s", state);
 	fclose(fp);
 
+#if defined BATT_PERC_FILE &&\
+    defined BATT_CRITICAL_PERC
+    int percc = 0;
+    check_crit(&percc, state, cflag);
+#endif 
 
     if (strcmp(state, state_old)) {
 #ifdef BATT_DELAY
         sleep(BATT_DELAY);
 #endif
-#ifdef BATT_PERC_FILE
-#define PERC
-        int perc = 0;
-        get_perc(&perc, state);
-#endif
+
 #if defined BATT_TIME_REM_EMPTY_FILE &&\
         defined BATT_TIME_REM_CHARGED_FILE
 #define TIME
         int time = 0;
         get_time(&time, state);
+#endif
+#ifdef BATT_PERC_FILE
+#define PERC
+        int perc = 0;
+        get_perc(&perc, state);
 #endif
 
         char *msg = malloc(sizeof(char) * 100);
@@ -92,29 +112,6 @@ check_batt(char *state_old)
     strcpy(state_old, state);
 }
 
-#ifdef BATT_PERC_FILE
-static void
-get_perc(int *perc, char *state)
-{
-	FILE *fp;
-    fp = fopen(BATT_PERC_FILE, "r");
-    if (fp == NULL) {
-        warn("Failed to open file %s", BATT_PERC_FILE);
-    }
-    fscanf(fp, "%d", perc);
-    fclose(fp);
-
-#ifdef BATT_CRITICAL_PERC
-    if(*perc<BATT_CRITICAL_PERC && strcmp(state, BATT_STATE_CHARGING)) {
-        char *critmsg = malloc(sizeof(char) * 40);
-        snprintf(critmsg, 40, "Battery low, %d%%\nconnect charger soon", *perc);
-        send_notif(1, critmsg);
-        free(critmsg);
-    }
-#endif
-}
-#endif
-
 #if defined BATT_TIME_REM_EMPTY_FILE &&\
     defined BATT_TIME_REM_CHARGED_FILE
 static void
@@ -136,6 +133,45 @@ get_time(int *time, char *state)
         }
         fscanf(fp, "%d", time);
         fclose(fp);
+    }
+}
+#endif
+
+#ifdef BATT_PERC_FILE
+static void
+get_perc(int *perc, char *state)
+{
+	FILE *fp;
+    fp = fopen(BATT_PERC_FILE, "r");
+    if (fp == NULL) {
+        warn("Failed to open file %s", BATT_PERC_FILE);
+    }
+    fscanf(fp, "%d", perc);
+    fclose(fp);
+}
+#endif
+
+#if defined BATT_PERC_FILE &&\
+    defined BATT_CRITICAL_PERC
+static void
+check_crit(int *perc, char *state, char *cflag)
+{
+	FILE *fp;
+    fp = fopen(BATT_PERC_FILE, "r");
+    if (fp == NULL) {
+        warn("Failed to open file %s", BATT_PERC_FILE);
+    }
+    fscanf(fp, "%d", perc);
+    fclose(fp);
+
+    if(*cflag != 1 && *perc <= BATT_CRITICAL_PERC && strcmp(state, BATT_STATE_CHARGING)) {
+        *cflag=1;
+        char *critmsg = malloc(sizeof(char) * 40);
+        snprintf(critmsg, 40, "Battery low, %d%%\nconnect charger soon", *perc);
+        send_notif(1, critmsg);
+        free(critmsg);
+    } else if (strcmp(state, BATT_STATE_DISCHARGING)) {
+        *cflag=0;
     }
 }
 #endif
@@ -224,12 +260,21 @@ main(int argc, char *argv[])
 #ifdef WLAN_LINK_FILE
     int link_old = -1;
 #endif
+#if defined BATT_PERC_FILE &&\
+    defined BATT_CRITICAL_PERC
+    char cflag = 0;
+#endif
     while (!done) {
 #if defined BATT_STATE_FILE &&\
     defined BATT_STATE_FULL &&\
     defined BATT_STATE_DISCHARGING &&\
     defined BATT_STATE_CHARGING
+#if defined BATT_PERC_FILE &&\
+    defined BATT_CRITICAL_PERC
+        check_batt(state_old, &cflag);
+#else
         check_batt(state_old);
+#endif
 #endif
 #ifdef WLAN_LINK_FILE
         check_wlan(&link_old);

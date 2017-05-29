@@ -1,4 +1,4 @@
-/* see LICENCE file for copyright and license information */
+/* see LICENSE file for copyright and license information */
 
 /* INTERVAL: interval to check in seconds
    BATT_STATE_FILE: file containing the state "charging" "discharging" etc
