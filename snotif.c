@@ -64,6 +64,8 @@ check_batt(char *state_old)
             strcat(msg, "discharging");
         } else if (!strcmp(state, BATT_STATE_CHARGING)) {
             strcat(msg, "charging");
+        } else {
+            strcat(msg, "status unknown");
         }
 
         if (strcmp(state, BATT_STATE_FULL)) {
