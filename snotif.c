@@ -96,11 +96,11 @@ check_batt(char *state_old)
             free(percstr);
 #endif
 #ifdef TIME
-            char *timestr = malloc(sizeof(char) * 13);
+            char *timestr = malloc(sizeof(char) * 21);
 #ifdef PERC
-            snprintf(timestr, 13, ", %02d:%02d left", time/60, time%60);
+            snprintf(timestr, 21, ", %02d:%02d left", time/60, time%60);
 #else
-            snprintf(timestr, 13, "\n%02d:%02d left", time/60, time%60);
+            snprintf(timestr, 21, "\n%02d:%02d left", time/60, time%60);
 #endif
             strcat(msg, timestr);
             free(timestr);
@@ -164,7 +164,7 @@ check_crit(int *perc, char *state, char *cflag)
     fscanf(fp, "%d", perc);
     fclose(fp);
 
-    if(*cflag != 1 && *perc <= BATT_CRITICAL_PERC && strcmp(state, BATT_STATE_CHARGING)) {
+    if(*cflag != 1 && *perc > 0 && *perc <= BATT_CRITICAL_PERC && strcmp(state, BATT_STATE_CHARGING)) {
         *cflag=1;
         char *critmsg = malloc(sizeof(char) * 40);
         snprintf(critmsg, 40, "Battery low, %d%%\nconnect charger soon", *perc);
