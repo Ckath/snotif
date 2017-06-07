@@ -8,7 +8,7 @@ snotif currently boasts the following features:
 - Critical battery percentage warning, if configured/supported
 - Optional extra information about percentage and time left, if configured/supported 
 - WLAN notifications (disconnected from network, connected to network)
-- mostly undocumented codebase
+- Compile time configuration, no parsing config files at runtime
 
 ## setup
 1. clone repo
@@ -34,8 +34,6 @@ it's suggested you start snotif with `snotif -d` from your startup script or oth
         -h print this info and exit
 
 ## TODO
-- comment/document code
-- possibly a cleaner solution than checking defines
 - switch to less extensive notification library than libnotify 
 - write a less scrapped together makefile
 - write a small manualpage explaining the stuff mentioned in usage and this page

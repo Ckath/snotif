@@ -9,41 +9,66 @@
 #include <unistd.h>
 #include "config.h"
 
+/* config parse logic */
+#ifdef BATT_PERC_FILE
+#define BATT_PERC_SET 1
+#else
+#define BATT_PERC_SET 0
+#endif
+
 #if defined BATT_PERC_FILE &&\
     defined BATT_CRITICAL_PERC
-static void check_batt(char *state_old, char *cflag);
+#define BATT_CRIT_SET 1
 #else
-static void check_batt(char *state_old);
+#define BATT_CRIT_SET 0
 #endif
-#ifdef BATT_PERC_FILE
+
 #if defined BATT_TIME_REM_EMPTY_FILE &&\
     defined BATT_TIME_REM_CHARGED_FILE
-static void get_time(int *time, char *state);
+#define BATT_TIME_SET 1
+#else
+#define BATT_TIME_SET 0
 #endif
-static void get_perc(int *perc, char *state);
-#endif
-#if defined BATT_PERC_FILE &&\
-    defined BATT_CRITICAL_PERC
-static void check_crit(int *perc, char *state, char *cflag);
-#endif
+
 #ifdef WLAN_LINK_FILE
-static void check_wlan(int *link_old);
+#define WLAN_LINK_SET 1
+#else
+#define WLAN_LINK_SET 0
 #endif
-static void send_notif(char uflag, char *msg);
+
+#ifdef BATT_DELAY
+#define BATT_DELAY_SET 1
+#else
+#define BATT_DELAY_SET 0
+#endif
+
+#ifdef INTERVAL
+#define INTERVAL_SET 1
+#else
+#define INTERVAL_SET 0
+#endif
+
+static void check_batt(char *state_old, char *cflag);
+static void get_time(int *time, char *state);
+static void get_perc(int *perc, char *state);
+static void check_crit(int *perc, char *state, char *cflag);
+static void check_wlan(int *link_old);
+static void send_notif(char uflag, char *title, char *body);
 static void sighandler(const int signo);
 
 static unsigned short int done;
 
+/* main battery check function,
+ * if so configured only checks for state,
+ * will gather more info if it's configured.
+ * includes the critical check as well 
+ * only if state changes notification message is prepared and sent */
 static void
-#if defined BATT_PERC_FILE &&\
-    defined BATT_CRITICAL_PERC
 check_batt(char *state_old, char *cflag)
-#else
-check_batt(char *state_old)
-#endif
 {
 	FILE *fp;
     char state[12];
+
 	fp = fopen(BATT_STATE_FILE, "r");
 	if (fp == NULL) {
 		warn("Failed to open file %s", BATT_STATE_FILE);
@@ -51,69 +76,67 @@ check_batt(char *state_old)
 	fscanf(fp, "%12s", state);
 	fclose(fp);
 
-#if defined BATT_PERC_FILE &&\
-    defined BATT_CRITICAL_PERC
-    int percc = 0;
-    check_crit(&percc, state, cflag);
-#endif 
+    if (BATT_CRIT_SET) {
+        int percc = 0;
+        check_crit(&percc, state, cflag);
+    }
 
     if (strcmp(state, state_old)) {
-#ifdef BATT_DELAY
-        sleep(BATT_DELAY);
-#endif
-
-#if defined BATT_TIME_REM_EMPTY_FILE &&\
-        defined BATT_TIME_REM_CHARGED_FILE
-#define TIME
+        if (BATT_DELAY_SET) {
+            sleep(BATT_DELAY);
+        } 
+        
         int time = 0;
-        get_time(&time, state);
-#endif
-#ifdef BATT_PERC_FILE
-#define PERC
         int perc = 0;
-        get_perc(&perc, state);
-#endif
+        if (BATT_TIME_SET) {
+            get_time(&time, state);
+        } if (BATT_PERC_SET) {
+            get_perc(&perc, state);
+        }
 
-        char *msg = malloc(sizeof(char) * 100);
-        strcpy(msg, "");
-        strcat(msg, "Battery ");
+        char *title = malloc(sizeof(char) * 22);
+        char *body = malloc(sizeof(char) * 78);
+        strcpy(title, "");
+        strcpy(body, "");
+        strcat(title, "Battery ");
 
         if (!strcmp(state, BATT_STATE_FULL)) {
-            strcat(msg, "fully charged");
+            strcat(title, "fully charged");
         } else if (!strcmp(state, BATT_STATE_DISCHARGING)) {
-            strcat(msg, "discharging");
+            strcat(title, "discharging");
         } else if (!strcmp(state, BATT_STATE_CHARGING)) {
-            strcat(msg, "charging");
+            strcat(title, "charging");
         } else {
-            strcat(msg, "status unknown");
+            strcat(title, "status unknown");
         }
 
         if (strcmp(state, BATT_STATE_FULL)) {
-#ifdef PERC
-            char *percstr = malloc(sizeof(char) * 6);
-            snprintf(percstr, 6, "\n%d%%", perc);
-            strcat(msg, percstr);
-            free(percstr);
-#endif
-#ifdef TIME
-            char *timestr = malloc(sizeof(char) * 21);
-#ifdef PERC
-            snprintf(timestr, 21, ", %02d:%02d left", time/60, time%60);
-#else
-            snprintf(timestr, 21, "\n%02d:%02d left", time/60, time%60);
-#endif
-            strcat(msg, timestr);
-            free(timestr);
-#endif
+            if (BATT_PERC_SET) {
+                char *percstr = malloc(sizeof(char) * 6);
+                snprintf(percstr, 6, "%d%%", perc);
+                strcat(body, percstr);
+                free(percstr);
+            }
+            if (BATT_TIME_SET) {
+                char *timestr = malloc(sizeof(char) * 21);
+                if (BATT_PERC_SET) {
+                    snprintf(timestr, 21, ", %02d:%02d left", time/60, time%60);
+                } else {
+                    snprintf(timestr, 21, "%02d:%02d left", time/60, time%60);
+                }
+                strcat(body, timestr);
+                free(timestr);
+            }
         }
-        send_notif(0, msg);
-        free(msg);
+        send_notif(0, title, body);
+        free(title);
+        free(body);
     }
     strcpy(state_old, state);
 }
 
-#if defined BATT_TIME_REM_EMPTY_FILE &&\
-    defined BATT_TIME_REM_CHARGED_FILE
+/* read time value from file, only if (dis)charging
+ * write this value in the variable */
 static void
 get_time(int *time, char *state)
 {
@@ -135,9 +158,9 @@ get_time(int *time, char *state)
         fclose(fp);
     }
 }
-#endif
 
-#ifdef BATT_PERC_FILE
+/* get percentage value from file
+ * write this value in the variable */
 static void
 get_perc(int *perc, char *state)
 {
@@ -149,10 +172,10 @@ get_perc(int *perc, char *state)
     fscanf(fp, "%d", perc);
     fclose(fp);
 }
-#endif
 
-#if defined BATT_PERC_FILE &&\
-    defined BATT_CRITICAL_PERC
+/* check if percentage is below defined critical value
+ * send warning notification, set cflag to stop spam
+ * this flag is reset once you start charging */
 static void
 check_crit(int *perc, char *state, char *cflag)
 {
@@ -164,19 +187,22 @@ check_crit(int *perc, char *state, char *cflag)
     fscanf(fp, "%d", perc);
     fclose(fp);
 
-    if(*cflag != 1 && *perc > 0 && *perc <= BATT_CRITICAL_PERC && strcmp(state, BATT_STATE_CHARGING)) {
+    if (*cflag != 1 && *perc > 0 && 
+            *perc <= BATT_CRITICAL_PERC && 
+            strcmp(state, BATT_STATE_CHARGING)) {
         *cflag=1;
-        char *critmsg = malloc(sizeof(char) * 40);
-        snprintf(critmsg, 40, "Battery low, %d%%\nconnect charger soon", *perc);
-        send_notif(1, critmsg);
+        char *critmsg = malloc(sizeof(char) * 20);
+        snprintf(critmsg, 20, "Battery low, %d%%", *perc);
+        send_notif(1, critmsg, "connect charger soon");
         free(critmsg);
     } else if (strcmp(state, BATT_STATE_DISCHARGING)) {
         *cflag=0;
     }
 }
-#endif
 
-#ifdef WLAN_LINK_FILE
+/* check the link from file
+ * if link is unknown network assumed to be unreachable
+ * send warning notification */
 static void
 check_wlan(int *link_old)
 {
@@ -193,23 +219,23 @@ check_wlan(int *link_old)
 
     if (link != *link_old) {
         if (link == -1) {
-            send_notif(0, "Lost connection to network\nno connectivity");
+            send_notif(0, "Lost connection to network", "no connectivity");
         } else if (*link_old == -1) {
-            char *linkmsg = malloc(sizeof(char) * 32);
-            snprintf(linkmsg, 32, "Connected to network\nlink %d%%", link);
-            send_notif(0, linkmsg);
+            char *linkmsg = malloc(sizeof(char) * 12);
+            snprintf(linkmsg, 12, "link %d%%", link);
+            send_notif(0, "Connected to network", linkmsg);
             free(linkmsg);
         }
     }
     *link_old = link;
 }
-#endif
 
+/* simple libnotify wrapper function to easily send notifications */
 static void 
-send_notif(char uflag, char *msg)
+send_notif(char uflag, char *title, char *body)
 {
-    notify_init(msg);
-    NotifyNotification *notif = notify_notification_new(NULL, msg, NULL);
+    notify_init(title);
+    NotifyNotification *notif = notify_notification_new(title, body, NULL);
     if (uflag) {
         notify_notification_set_urgency(notif, NOTIFY_URGENCY_CRITICAL);
         notify_notification_close(notif, NULL);
@@ -219,7 +245,7 @@ send_notif(char uflag, char *msg)
     notify_uninit();
 }
 
-
+/* properly quit when asked to */
 static void
 sighandler(const int signo)
 {
@@ -227,7 +253,6 @@ sighandler(const int signo)
 		done = 1;
 	}
 }
-
 
 int
 main(int argc, char *argv[]) 
@@ -254,34 +279,19 @@ main(int argc, char *argv[])
 	sigaction(SIGINT,  &act, 0);
 	sigaction(SIGTERM, &act, 0);
     
-#ifdef BATT_STATE_FILE
     char state_old[12];
-#endif
-#ifdef WLAN_LINK_FILE
     int link_old = -1;
-#endif
-#if defined BATT_PERC_FILE &&\
-    defined BATT_CRITICAL_PERC
     char cflag = 0;
-#endif
+
     while (!done) {
-#if defined BATT_STATE_FILE &&\
-    defined BATT_STATE_FULL &&\
-    defined BATT_STATE_DISCHARGING &&\
-    defined BATT_STATE_CHARGING
-#if defined BATT_PERC_FILE &&\
-    defined BATT_CRITICAL_PERC
         check_batt(state_old, &cflag);
-#else
-        check_batt(state_old);
-#endif
-#endif
-#ifdef WLAN_LINK_FILE
-        check_wlan(&link_old);
-#endif
-#ifdef INTERVAL
-        sleep(INTERVAL);
-#endif
+        if (WLAN_LINK_SET) {
+            check_wlan(&link_old);
+        }
+
+        if (INTERVAL_SET) {
+            sleep(INTERVAL);
+        }
     }
     return 0;
 }
