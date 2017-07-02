@@ -269,7 +269,7 @@ main(int argc, char *argv[])
                 \noptions:\
                 \n\t-d start daemonized\
                 \n\t-v print version info and exit\
-                \n\t-h print this info and exit");
+                \n\t-h print this info and exit\n");
         exit(0);
     }
 
