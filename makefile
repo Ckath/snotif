@@ -1,7 +1,7 @@
 # see LICENSE file for copyright and license details.
 # TODO: write actual manpages
 
-VERSION = 0.2
+VERSION = 0.3
 PREFIX = /usr/local
 NAME=snotif
 CC=gcc

@@ -258,7 +258,7 @@ int
 main(int argc, char *argv[]) 
 {
     if (argc == 2 && !strcmp("-v", argv[1])) {
-        printf("sbatt-%s\n", VERSION);
+        printf("snotif-%s\n", VERSION);
         exit(0);
     } else if (argc == 2 && !strcmp("-d", argv[1])) {
         if (daemon(1, 1) < 0) {
