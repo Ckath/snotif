@@ -8,6 +8,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "config.h"
+typedef enum { NORMAL, IMPORTANT } urgency;
 
 /* config parse logic */
 #ifdef BATT_PERC_FILE
@@ -53,7 +54,7 @@ static void get_time(int *time, char *state);
 static void get_perc(int *perc, char *state);
 static void check_crit(int *perc, char *state, char *cflag);
 static void check_wlan(int *link_old);
-static void send_notif(char uflag, char *title, char *body);
+static void send_notif(urgency notif_urgency, char *title, char *body);
 static void sighandler(const int signo);
 
 static unsigned short int done;
@@ -128,7 +129,7 @@ check_batt(char *state_old, char *cflag)
                 free(timestr);
             }
         }
-        send_notif(0, title, body);
+        send_notif(NORMAL, title, body);
         free(title);
         free(body);
     }
@@ -193,7 +194,7 @@ check_crit(int *perc, char *state, char *cflag)
         *cflag=1;
         char *critmsg = malloc(sizeof(char) * 20);
         snprintf(critmsg, 20, "Battery low, %d%%", *perc);
-        send_notif(1, critmsg, "connect charger soon");
+        send_notif(IMPORTANT, critmsg, "connect charger soon");
         free(critmsg);
     } else if (strcmp(state, BATT_STATE_DISCHARGING)) {
         *cflag=0;
@@ -219,11 +220,11 @@ check_wlan(int *link_old)
 
     if (link != *link_old) {
         if (link == -1) {
-            send_notif(0, "Lost connection to network", "no connectivity");
+            send_notif(NORMAL, "Lost connection to network", "no connectivity");
         } else if (*link_old == -1) {
             char *linkmsg = malloc(sizeof(char) * 12);
             snprintf(linkmsg, 12, "link %d%%", link);
-            send_notif(0, "Connected to network", linkmsg);
+            send_notif(NORMAL, "Connected to network", linkmsg);
             free(linkmsg);
         }
     }
@@ -232,11 +233,11 @@ check_wlan(int *link_old)
 
 /* simple libnotify wrapper function to easily send notifications */
 static void 
-send_notif(char uflag, char *title, char *body)
+send_notif(urgency notif_urgency, char *title, char *body)
 {
     notify_init(title);
     NotifyNotification *notif = notify_notification_new(title, body, NULL);
-    if (uflag) {
+    if (notif_urgency == IMPORTANT) {
         notify_notification_set_urgency(notif, NOTIFY_URGENCY_CRITICAL);
         notify_notification_close(notif, NULL);
     }
