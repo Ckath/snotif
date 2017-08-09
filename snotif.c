@@ -188,16 +188,16 @@ check_crit(int *perc, char *state, char *cflag)
     fscanf(fp, "%d", perc);
     fclose(fp);
 
-    if (*cflag != 1 && *perc > 0 && 
+    if (!(*cflag) && *perc > 0 && 
             *perc <= BATT_CRITICAL_PERC && 
             strcmp(state, BATT_STATE_CHARGING)) {
-        *cflag=1;
+        *cflag = 1;
         char *critmsg = malloc(sizeof(char) * 20);
         snprintf(critmsg, 20, "Battery low, %d%%", *perc);
         send_notif(IMPORTANT, critmsg, "connect charger soon");
         free(critmsg);
     } else if (strcmp(state, BATT_STATE_DISCHARGING)) {
-        *cflag=0;
+        *cflag = 0;
     }
 }
 
@@ -266,11 +266,11 @@ main(int argc, char *argv[])
             err(1, "daemon");
         }
     } else if (argc != 1) { 
-        printf("usage: snotif [option]\n\
-                \noptions:\
-                \n\t-d start daemonized\
-                \n\t-v print version info and exit\
-                \n\t-h print this info and exit\n");
+        printf("usage: snotif [option]\n"
+                "options:\n"
+                "  -d start daemonized\n"
+                "  -v print version info and exit\n"
+                "  -h print this info and exit\n");
         exit(0);
     }
 

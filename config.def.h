@@ -22,7 +22,7 @@
 
 /* optional settings battery */
 #define BATT_PERC_FILE             "/sys/class/power_supply/BAT0/capacity"
-/* #define BATT_TIME_REM_EMPTY_FILE "" */
+/* #define BATT_TIME_REM_EMPTY_FILE   "" */
 /* #define BATT_TIME_REM_CHARGED_FILE "" */
 #define BATT_CRITICAL_PERC         25
 #define BATT_DELAY                 1
