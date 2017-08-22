@@ -14,6 +14,7 @@ typedef enum { NORMAL, IMPORTANT } urgency;
 #ifdef BATT_PERC_FILE
 #define BATT_PERC_SET 1
 #else
+#define BATT_PERC_FILE ""
 #define BATT_PERC_SET 0
 #endif
 
@@ -21,6 +22,7 @@ typedef enum { NORMAL, IMPORTANT } urgency;
     defined BATT_CRITICAL_PERC
 #define BATT_CRIT_SET 1
 #else
+#define BATT_PERC_FILE ""
 #define BATT_CRIT_SET 0
 #endif
 
@@ -28,24 +30,29 @@ typedef enum { NORMAL, IMPORTANT } urgency;
     defined BATT_TIME_REM_CHARGED_FILE
 #define BATT_TIME_SET 1
 #else
+#define BATT_TIME_REM_EMPTY_FILE ""
+#define BATT_TIME_REM_CHARGED_FILE ""
 #define BATT_TIME_SET 0
 #endif
 
 #ifdef WLAN_LINK_FILE
 #define WLAN_LINK_SET 1
 #else
+#define WLAN_LINK_FILE ""
 #define WLAN_LINK_SET 0
 #endif
 
 #ifdef BATT_DELAY
 #define BATT_DELAY_SET 1
 #else
+#define BATT_DELAY 0
 #define BATT_DELAY_SET 0
 #endif
 
 #ifdef INTERVAL
 #define INTERVAL_SET 1
 #else
+#define INTERVAL 0
 #define INTERVAL_SET 0
 #endif
 
@@ -74,7 +81,7 @@ check_batt(char *state_old, char *cflag)
 	if (fp == NULL) {
 		warn("Failed to open file %s", BATT_STATE_FILE);
 	}
-	fscanf(fp, "%12s", state);
+	fscanf(fp, "%11s", state);
 	fclose(fp);
 
     if (BATT_CRIT_SET) {
@@ -95,8 +102,8 @@ check_batt(char *state_old, char *cflag)
             get_perc(&perc, state);
         }
 
-        char *title = malloc(sizeof(char) * 22);
-        char *body = malloc(sizeof(char) * 78);
+        char title[22];
+        char body[78];
         strcpy(title, "");
         strcpy(body, "");
         strcat(title, "Battery ");
@@ -113,25 +120,21 @@ check_batt(char *state_old, char *cflag)
 
         if (strcmp(state, BATT_STATE_FULL)) {
             if (BATT_PERC_SET) {
-                char *percstr = malloc(sizeof(char) * 6);
-                snprintf(percstr, 6, "%d%%", perc);
+                char percstr[6];
+                sprintf(percstr, "%d%%", perc);
                 strcat(body, percstr);
-                free(percstr);
             }
             if (BATT_TIME_SET) {
-                char *timestr = malloc(sizeof(char) * 21);
+                char timestr[21];
                 if (BATT_PERC_SET) {
-                    snprintf(timestr, 21, ", %02d:%02d left", time/60, time%60);
+                    sprintf(timestr, ", %02d:%02d left", time/60, time%60);
                 } else {
-                    snprintf(timestr, 21, "%02d:%02d left", time/60, time%60);
+                    sprintf(timestr, "%02d:%02d left", time/60, time%60);
                 }
                 strcat(body, timestr);
-                free(timestr);
             }
         }
         send_notif(NORMAL, title, body);
-        free(title);
-        free(body);
     }
     strcpy(state_old, state);
 }
@@ -192,10 +195,9 @@ check_crit(int *perc, char *state, char *cflag)
             *perc <= BATT_CRITICAL_PERC && 
             strcmp(state, BATT_STATE_CHARGING)) {
         *cflag = 1;
-        char *critmsg = malloc(sizeof(char) * 20);
-        snprintf(critmsg, 20, "Battery low, %d%%", *perc);
+        char critmsg[20];
+        sprintf(critmsg, "Battery low, %d%%", *perc);
         send_notif(IMPORTANT, critmsg, "connect charger soon");
-        free(critmsg);
     } else if (strcmp(state, BATT_STATE_DISCHARGING)) {
         *cflag = 0;
     }
@@ -222,10 +224,9 @@ check_wlan(int *link_old)
         if (link == -1) {
             send_notif(NORMAL, "Lost connection to network", "no connectivity");
         } else if (*link_old == -1) {
-            char *linkmsg = malloc(sizeof(char) * 12);
-            snprintf(linkmsg, 12, "link %d%%", link);
+            char linkmsg[12];
+            sprintf(linkmsg, "link %d%%", link);
             send_notif(NORMAL, "Connected to network", linkmsg);
-            free(linkmsg);
         }
     }
     *link_old = link;
