@@ -102,7 +102,7 @@ check_batt(char *state_old, char *cflag)
             get_perc(&perc, state);
         }
 
-        char title[22];
+        char title[23];
         char body[78];
         strcpy(title, "");
         strcpy(body, "");
