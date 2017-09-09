@@ -267,12 +267,12 @@ main(int argc, char *argv[])
             err(1, "daemon");
         }
     } else if (argc != 1) { 
-        printf("usage: snotif [option]\n"
+        fprintf(stderr, "usage: snotif [option]\n"
                 "options:\n"
                 "  -d start daemonized\n"
                 "  -v print version info and exit\n"
                 "  -h print this info and exit\n");
-        exit(0);
+        exit(1);
     }
 
 	struct sigaction act;
