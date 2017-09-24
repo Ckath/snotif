@@ -33,11 +33,6 @@ it's suggested you start snotif with `snotif -d` from your startup script or oth
         -v print version info and exit
         -h print this info and exit
 
-## TODO
-- switch to less extensive notification library than libnotify 
-- write a less scrapped together makefile
-- write a small manualpage explaining the stuff mentioned in usage and this page
-
 ## bugs and contribution
 you can report bugs or make feature requests on the issues page
 
