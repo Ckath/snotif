@@ -74,15 +74,15 @@ static unsigned short int done;
 static void
 check_batt(char *state_old, char *cflag)
 {
-	FILE *fp;
+    FILE *fp;
     char state[12];
 
-	fp = fopen(BATT_STATE_FILE, "r");
-	if (fp == NULL) {
-		warn("Failed to open file %s", BATT_STATE_FILE);
-	}
-	fscanf(fp, "%11s", state);
-	fclose(fp);
+    fp = fopen(BATT_STATE_FILE, "r");
+    if (fp == NULL) {
+        warn("Failed to open file %s", BATT_STATE_FILE);
+    }
+    fscanf(fp, "%11s", state);
+    fclose(fp);
 
     if (BATT_CRIT_SET) {
         int percc = 0;
@@ -168,7 +168,7 @@ get_time(int *time, char *state)
 static void
 get_perc(int *perc, char *state)
 {
-	FILE *fp;
+    FILE *fp;
     fp = fopen(BATT_PERC_FILE, "r");
     if (fp == NULL) {
         warn("Failed to open file %s", BATT_PERC_FILE);
@@ -183,7 +183,7 @@ get_perc(int *perc, char *state)
 static void
 check_crit(int *perc, char *state, char *cflag)
 {
-	FILE *fp;
+    FILE *fp;
     fp = fopen(BATT_PERC_FILE, "r");
     if (fp == NULL) {
         warn("Failed to open file %s", BATT_PERC_FILE);
@@ -215,10 +215,10 @@ check_wlan(int *link_old)
     if (fp == NULL) {
         warn("Failed to open file %s", WLAN_LINK_FILE);
     }
-	fscanf(fp, "%*s %*s %*s %*s %*s %*s %*s %*s %*s %*s\n\
+    fscanf(fp, "%*s %*s %*s %*s %*s %*s %*s %*s %*s %*s\n\
             %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %*d\n\
             %*s %*d %d", &link);
-	fclose(fp);
+    fclose(fp);
 
     if (link != *link_old) {
         if (link == -1) {
@@ -251,9 +251,9 @@ send_notif(urgency notif_urgency, char *title, char *body)
 static void
 sighandler(const int signo)
 {
-	if (signo == SIGTERM || signo == SIGINT) {
-		done = 1;
-	}
+    if (signo == SIGTERM || signo == SIGINT) {
+        done = 1;
+    }
 }
 
 int
@@ -275,11 +275,11 @@ main(int argc, char *argv[])
         exit(1);
     }
 
-	struct sigaction act;
-	memset(&act, 0, sizeof(act));
-	act.sa_handler = sighandler;
-	sigaction(SIGINT,  &act, 0);
-	sigaction(SIGTERM, &act, 0);
+    struct sigaction act;
+    memset(&act, 0, sizeof(act));
+    act.sa_handler = sighandler;
+    sigaction(SIGINT,  &act, 0);
+    sigaction(SIGTERM, &act, 0);
     
     char state_old[12];
     int link_old = -1;
