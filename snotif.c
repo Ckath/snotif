@@ -193,7 +193,8 @@ check_crit(int *perc, char *state, char *cflag)
 
     if (!(*cflag) && *perc > 0 && 
             *perc <= BATT_CRITICAL_PERC && 
-            strcmp(state, BATT_STATE_CHARGING)) {
+            strcmp(state, BATT_STATE_CHARGING) &&
+            strcmp(state, BATT_STATE_FULL)) {
         *cflag = 1;
         char critmsg[20];
         sprintf(critmsg, "Battery low, %d%%", *perc);
