@@ -35,6 +35,15 @@ typedef enum { NORMAL, IMPORTANT } urgency;
 #define BATT_TIME_SET 0
 #endif
 
+#if defined BATT_POWER_FILE &&\
+    defined BATT_ENERGY_FILE
+#define BATT_TIME_SET 1
+#define NO_SMAPI
+#else
+#define BATT_POWER_FILE ""
+#define BATT_ENERGY_FILE ""
+#endif
+
 #ifdef WLAN_LINK_FILE
 #define WLAN_LINK_SET 1
 #else
@@ -146,6 +155,33 @@ get_time(int *time, char *state)
 {
     if (!strcmp(state, BATT_STATE_DISCHARGING)) {
         FILE *fp;
+#ifdef NO_SMAPI
+        int energy = 0;
+        int power = 0;
+        fp = fopen(BATT_ENERGY_FILE, "r");
+        if (fp == NULL) {
+            warn("Failed to open file %s", BATT_ENERGY_FILE);
+            return 0;
+        }
+        fscanf(fp, "%d", &energy);
+        fclose(fp);
+
+        fp = fopen(BATT_POWER_FILE, "r");
+        if (fp == NULL) {
+            warn("Failed to open file %s", BATT_POWER_FILE);
+            return 0;
+        }
+        fscanf(fp, "%d", &power);
+        fclose(fp);
+
+        if (!power || !energy) {
+            return 0;
+        }
+
+        *time = (((double)energy/power)-energy/power)*60*60;
+        return;
+#endif
+
         fp = fopen(BATT_TIME_REM_EMPTY_FILE, "r");
         if (fp == NULL) {
             warn("Failed to open file %s", BATT_TIME_REM_EMPTY_FILE);
@@ -153,6 +189,9 @@ get_time(int *time, char *state)
         fscanf(fp, "%d", time);
         fclose(fp);
     } else if (!strcmp(state, BATT_STATE_CHARGING)) {
+#ifdef NO_SMAPI
+        return;
+#endif
         FILE *fp;
         fp = fopen(BATT_TIME_REM_CHARGED_FILE, "r");
         if (fp == NULL) {
