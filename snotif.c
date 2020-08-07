@@ -44,7 +44,7 @@ typedef enum { NORMAL, IMPORTANT } urgency;
 #endif
 
 #if defined SMAPI_TIME ||\
-	defined CALC_TIME 
+    defined CALC_TIME
 #define BATT_TIME_SET 1
 #else
 #define BATT_TIME_SET 0
@@ -84,7 +84,7 @@ static unsigned short int done;
 /* main battery check function,
  * if so configured only checks for state,
  * will gather more info if it's configured.
- * includes the critical check as well 
+ * includes the critical check as well
  * only if state changes notification message is prepared and sent */
 static void
 check_batt(char *state_old, char *cflag)
@@ -107,8 +107,8 @@ check_batt(char *state_old, char *cflag)
     if (strcmp(state, state_old)) {
         if (BATT_DELAY_SET) {
             sleep(BATT_DELAY);
-        } 
-        
+        }
+
         int time = 0;
         int perc = 0;
         if (BATT_TIME_SET) {
@@ -236,8 +236,8 @@ check_crit(int *perc, char *state, char *cflag)
     fscanf(fp, "%d", perc);
     fclose(fp);
 
-    if (!(*cflag) && *perc > 0 && 
-            *perc <= BATT_CRITICAL_PERC && 
+    if (!(*cflag) && *perc > 0 &&
+            *perc <= BATT_CRITICAL_PERC &&
             strcmp(state, BATT_STATE_CHARGING) &&
             strcmp(state, BATT_STATE_FULL)) {
         *cflag = 1;
@@ -279,7 +279,7 @@ check_wlan(int *link_old)
 }
 
 /* simple libnotify wrapper function to easily send notifications */
-static void 
+static void
 send_notif(urgency notif_urgency, char *title, char *body)
 {
     notify_init(title);
@@ -303,7 +303,7 @@ sighandler(const int signo)
 }
 
 int
-main(int argc, char *argv[]) 
+main(int argc, char *argv[])
 {
     if (argc == 2 && !strcmp("-v", argv[1])) {
         printf("snotif-%s\n", VERSION);
@@ -312,7 +312,7 @@ main(int argc, char *argv[])
         if (daemon(1, 1) < 0) {
             err(1, "daemon");
         }
-    } else if (argc != 1) { 
+    } else if (argc != 1) {
         fprintf(stderr, "usage: snotif [option]\n"
                 "options:\n"
                 "  -d start daemonized\n"
@@ -326,7 +326,7 @@ main(int argc, char *argv[])
     act.sa_handler = sighandler;
     sigaction(SIGINT,  &act, 0);
     sigaction(SIGTERM, &act, 0);
-    
+
     char state_old[12];
     int link_old = -1;
     char cflag = 0;
