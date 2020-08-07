@@ -28,20 +28,26 @@ typedef enum { NORMAL, IMPORTANT } urgency;
 
 #if defined BATT_TIME_REM_EMPTY_FILE &&\
     defined BATT_TIME_REM_CHARGED_FILE
-#define BATT_TIME_SET 1
+#define SMAPI_TIME
 #else
 #define BATT_TIME_REM_EMPTY_FILE ""
 #define BATT_TIME_REM_CHARGED_FILE ""
-#define BATT_TIME_SET 0
 #endif
 
 #if defined BATT_POWER_FILE &&\
     defined BATT_ENERGY_FILE
-#define BATT_TIME_SET 1
+#define CALC_TIME
 #define NO_SMAPI
 #else
 #define BATT_POWER_FILE ""
 #define BATT_ENERGY_FILE ""
+#endif
+
+#if defined SMAPI_TIME ||\
+	defined CALC_TIME 
+#define BATT_TIME_SET 1
+#else
+#define BATT_TIME_SET 0
 #endif
 
 #ifdef WLAN_LINK_FILE
@@ -133,7 +139,7 @@ check_batt(char *state_old, char *cflag)
                 sprintf(percstr, "%d%%", perc);
                 strcat(body, percstr);
             }
-            if (BATT_TIME_SET) {
+            if (BATT_TIME_SET && time) {
                 char timestr[21];
                 if (BATT_PERC_SET) {
                     sprintf(timestr, ", %02d:%02d left", time/60, time%60);
@@ -161,7 +167,7 @@ get_time(int *time, char *state)
         fp = fopen(BATT_ENERGY_FILE, "r");
         if (fp == NULL) {
             warn("Failed to open file %s", BATT_ENERGY_FILE);
-            return 0;
+            return;
         }
         fscanf(fp, "%d", &energy);
         fclose(fp);
@@ -169,16 +175,16 @@ get_time(int *time, char *state)
         fp = fopen(BATT_POWER_FILE, "r");
         if (fp == NULL) {
             warn("Failed to open file %s", BATT_POWER_FILE);
-            return 0;
+            return;
         }
         fscanf(fp, "%d", &power);
         fclose(fp);
 
         if (!power || !energy) {
-            return 0;
+            return;
         }
 
-        *time = (((double)energy/power)-energy/power)*60*60;
+        *time = (double)energy/power*60;
         return;
 #endif
 

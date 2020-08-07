@@ -14,20 +14,20 @@
 /* features left undefined will not be compiled */
 
 /* general */
-#define INTERVAL                   2
+#define INTERVAL                   1
 
 /* required settings battery */
-#define BATT_STATE_FILE            "/sys/class/power_supply/BAT0/status"
-#define BATT_STATE_FULL            "Full"
-#define BATT_STATE_DISCHARGING     "Discharging"
-#define BATT_STATE_CHARGING        "Charging"
+#define BATT_STATE_FILE            "/sys/devices/platform/smapi/BAT0/state"
+#define BATT_STATE_FULL            "idle"
+#define BATT_STATE_DISCHARGING     "discharging"
+#define BATT_STATE_CHARGING        "charging"
 
 /* optional settings battery */
 #define BATT_PERC_FILE             "/sys/class/power_supply/BAT0/capacity"
 /* #define BATT_TIME_REM_EMPTY_FILE   "" */
 /* #define BATT_TIME_REM_CHARGED_FILE "" */
-#define BATT_POWER_FILE            "/sys/class/power_supply/BAT0/energy_now"
-#define BATT_ENERGY_FILE           "/sys/class/power_supply/BAT0/power_now"
+#define BATT_POWER_FILE            "/sys/class/power_supply/BAT0/power_now"
+#define BATT_ENERGY_FILE           "/sys/class/power_supply/BAT0/energy_now"
 #define BATT_CRITICAL_PERC         25
 #define BATT_DELAY                 1
 
